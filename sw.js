@@ -1,6 +1,6 @@
 /* Ders Tahtam — çevrimdışı önbellek
    SURUM değişince eski önbellek silinir ve yeni dosyalar indirilir. */
-const SURUM = "dt-2026-10-04-4";
+const SURUM = "dt-2026-10-05-1";
 const TEMEL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
