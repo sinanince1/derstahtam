@@ -1,6 +1,6 @@
 /* Ders Tahtam — çevrimdışı önbellek
    SURUM değişince eski önbellek silinir ve yeni dosyalar indirilir. */
-const SURUM = "dt-2026-10-05-1";
+const SURUM = "dt-2026-10-05-2";
 const TEMEL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -16,19 +16,27 @@ self.addEventListener("fetch", e => {
   const url = new URL(istek.url);
   if (url.origin !== location.origin) return;
 
-  /* müzik ve ikonlar: önce önbellek, yoksa ağdan al ve sakla */
+  /* müzik ve ikonlar: önce önbellek, yoksa ağdan al ve sakla
+     (206/kısmi ve başarısız yanıtlar asla önbelleğe yazılmaz — aksi halde
+     bozuk/yarım bir yanıt kalıcı olarak önbellekte takılı kalabilir) */
   if (/\.(mp3|m4a|ogg|wav|png|jpg|jpeg|svg|webp|woff2?)$/i.test(url.pathname)) {
-    e.respondWith(caches.match(istek).then(c => c || fetch(istek).then(y => {
-      const kopya = y.clone();
-      caches.open(SURUM).then(k => k.put(istek, kopya)).catch(() => {});
-      return y;
-    })));
+    e.respondWith(
+      caches.match(istek).then(c => c || fetch(istek).then(y => {
+        if (y && y.ok && y.status === 200) {
+          const kopya = y.clone();
+          caches.open(SURUM).then(k => k.put(istek, kopya)).catch(() => {});
+        }
+        return y;
+      }))
+    );
     return;
   }
   /* sayfa ve liste.json: önce ağ (güncelleme hemen gelsin), internet yoksa önbellek */
   e.respondWith(fetch(istek).then(y => {
-    const kopya = y.clone();
-    caches.open(SURUM).then(k => k.put(istek, kopya)).catch(() => {});
+    if (y && y.ok && y.status === 200) {
+      const kopya = y.clone();
+      caches.open(SURUM).then(k => k.put(istek, kopya)).catch(() => {});
+    }
     return y;
   }).catch(() => caches.match(istek).then(c => c || caches.match("./index.html"))));
 });
